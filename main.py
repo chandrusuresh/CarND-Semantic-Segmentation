@@ -58,16 +58,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     layer7_1Dconv = tf.layers.conv2d(vgg_layer7_out, num_classes,1,padding='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    conv7_2x = tf.layers.conv2d_transpose(layer7_1Dconv, num_classes, 4, 2, padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    conv7_2x = tf.layers.conv2d_transpose(layer7_1Dconv, num_classes, 4, strides=(2,2), padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     layer4_1Dconv = tf.layers.conv2d(vgg_layer4_out, num_classes,1,padding='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     skipLayer1 = tf.add(conv7_2x, layer4_1Dconv)
-    skipLayer1_2x = tf.layers.conv2d_transpose(skipLayer1, num_classes, 4, 2, padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    skipLayer1_2x = tf.layers.conv2d_transpose(skipLayer1, num_classes, 4, strides=(2,2), padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     layer3_1Dconv = tf.layers.conv2d(vgg_layer3_out, num_classes,1,padding='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     skipLayer2 = tf.add(skipLayer1_2x, layer3_1Dconv)
 
-    final_layer = tf.layers.conv2d_transpose(skipLayer2, num_classes, 16, 8, padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    final_layer = tf.layers.conv2d_transpose(skipLayer2, num_classes, 16, strides=(8,8), padding ='same',kernel_initializer= tf.random_normal_initializer(stddev=0.01),kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     return final_layer
 
 tests.test_layers(layers)
