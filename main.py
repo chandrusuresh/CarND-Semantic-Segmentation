@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os.path
 import tensorflow as tf
 import helper
@@ -35,15 +34,13 @@ def load_vgg(sess, vgg_path):
     vgg_layer7_out_tensor_name = 'layer7_out:0'
 
     tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
-    graph = tf.get_default_graph()
-    input_tensor = graph.get_tensor_by_name(vgg_input_tensor_name)
-    keep_prob = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
-    layer3_out = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
-    layer4_out = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
-    layer7_out = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+    image_input = tf.get_default_graph().get_tensor_by_name(vgg_input_tensor_name)
+    keep_prob = tf.get_default_graph().get_tensor_by_name(vgg_keep_prob_tensor_name)
+    layer3_out = tf.get_default_graph().get_tensor_by_name(vgg_layer3_out_tensor_name)
+    layer4_out = tf.get_default_graph().get_tensor_by_name(vgg_layer4_out_tensor_name)
+    layer7_out = tf.get_default_graph().get_tensor_by_name(vgg_layer7_out_tensor_name)
 
-    return input_tensor, keep_prob, layer3_out, layer4_out, layer7_out
-
+    return image_input, keep_prob, layer3_out, layer4_out, layer7_out
 tests.test_load_vgg(load_vgg, tf)
 
 
@@ -98,6 +95,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     return nn_last_layer
 tests.test_layers(layers)
 
+
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
     Build the TensorFLow loss and optimizer operations.
@@ -108,12 +106,16 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
     # TODO: Implement function
-    logits = tf.reshape(nn_last_layer, (-1,num_classes))
-    correct_label = tf.reshape(correct_label,(-1,num_classes))
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits,labels=correct_label))
-    train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy_loss)
-    return logits, train_op, cross_entropy_loss
+    # make logits a 2D tensor where each row represents a pixel and each column a class
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    correct_label = tf.reshape(correct_label, (-1,num_classes))
+    # define loss function
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits= logits, labels= correct_label))
+    # define training operation
+    optimizer = tf.train.AdamOptimizer(learning_rate= learning_rate)
+    train_op = optimizer.minimize(cross_entropy_loss)
 
+    return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
 
 
@@ -133,13 +135,17 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    for n_epoch in range(epochs):
-        print("EPOCH {} ... ", format(n_epoch+1))
-        for image, label in get_batches_fn(batch_size):
-            _, loss = sess.run([train_op,cross_entropy_loss], feed_dict={input_image:image, correct_label:label, keep_prob:0.5, learning_rate:1e-3})
-        print("Loss: = {:.3f}".format(loss))
-    print()
+    sess.run(tf.global_variables_initializer())
 
+    print("Training...")
+    print()
+    for i in range(epochs):
+        print("EPOCH {} ...".format(i+1))
+        for image, label in get_batches_fn(batch_size):
+            _, loss = sess.run([train_op, cross_entropy_loss],
+                               feed_dict={input_image: image, correct_label: label,                                keep_prob: 0.5, learning_rate: 0.0009})
+            print("Loss: = {:.3f}".format(loss))
+        print()
 tests.test_train_nn(train_nn)
 
 
@@ -167,10 +173,7 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
-        input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_path)
-        final_layer = layers(layer3_out, layer4_out, layer7_out, num_classes)
 
-        # TODO: Train NN using the train_nn function
         epochs = 50
         batch_size = 5
 
